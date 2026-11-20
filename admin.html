@@ -1,0 +1,228 @@
+<!DOCTYPE html>
+<html lang="ar" dir="rtl">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <meta name="robots" content="noindex, nofollow">
+  <title>لوحة التحكم | MenuFlow</title>
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Cairo:wght@400;600;700&family=Playfair+Display:wght@600;700&display=swap" rel="stylesheet">
+  <link rel="stylesheet" href="style.css">
+</head>
+<body class="admin">
+
+<!-- Not configured -->
+<section id="view-config" class="center-wrap" hidden>
+  <div class="panel login-card">
+    <h1>الموقع غير مربوط بقاعدة البيانات</h1>
+    <div class="notice warn">
+      افتح الملف <code>config.js</code> وضع رابط مشروع Supabase والمفتاح العام (anon / publishable)، ثم أعد تحميل الصفحة. التفاصيل في <code>README.md</code>.
+    </div>
+  </div>
+</section>
+
+<!-- Login -->
+<section id="view-login" class="center-wrap" hidden>
+  <div class="panel login-card">
+    <div class="brand">
+      <svg viewBox="0 0 64 64" width="48" height="48" aria-hidden="true">
+        <circle cx="32" cy="32" r="29" fill="none" stroke="#b8842e" stroke-width="2.5"/>
+        <path d="M14 40h36a18 18 0 0 0-36 0Z" fill="#b8842e"/>
+        <rect x="11" y="42" width="42" height="4" rx="2" fill="#b8842e"/>
+        <circle cx="32" cy="19" r="3" fill="#b8842e"/>
+      </svg>
+      <span class="brand-name">ليالي الشام</span>
+    </div>
+    <h1>تسجيل الدخول للوحة التحكم</h1>
+    <form id="loginForm" novalidate>
+      <div class="field">
+        <label for="loginEmail">البريد الإلكتروني</label>
+        <input class="input" id="loginEmail" type="email" autocomplete="username" required dir="ltr">
+      </div>
+      <div class="field">
+        <label for="loginPassword">كلمة المرور</label>
+        <input class="input" id="loginPassword" type="password" autocomplete="current-password" required dir="ltr">
+      </div>
+      <div class="form-error" id="loginError" role="alert"></div>
+      <button class="btn btn-primary btn-block" id="loginBtn" type="submit">دخول</button>
+    </form>
+  </div>
+</section>
+
+<!-- Not an admin -->
+<section id="view-denied" class="center-wrap" hidden>
+  <div class="panel login-card">
+    <h1>لا تملك صلاحية الدخول</h1>
+    <div class="notice warn" style="margin-bottom:16px">
+      هذا الحساب لم تتم إضافته كمسؤول. اطلب من مدير النظام إضافته (راجع README.md).
+    </div>
+    <button class="btn btn-block" data-action="logout" type="button">تسجيل الخروج</button>
+  </div>
+</section>
+
+<!-- App -->
+<div id="view-app" hidden>
+  <header class="site-header scrolled">
+    <div class="container header-inner">
+      <div class="brand">
+        <span>
+          <span class="brand-name">لوحة التحكم</span><br>
+          <span class="brand-sub">ليالي الشام</span>
+        </span>
+      </div>
+      <div class="admin-bar">
+        <span class="admin-user" id="adminEmail"></span>
+        <a class="btn btn-sm" href="index.html" target="_blank" rel="noopener">عرض الموقع</a>
+        <button class="btn btn-sm" data-action="logout" type="button">خروج</button>
+      </div>
+    </div>
+  </header>
+
+  <main class="container" style="padding-bottom:64px">
+    <div class="tabs" role="tablist">
+      <button class="tab active" data-tab="products" role="tab" type="button">الأطباق</button>
+      <button class="tab" data-tab="categories" role="tab" type="button">الأقسام</button>
+    </div>
+
+    <!-- Products -->
+    <section id="tab-products">
+      <div class="page-head">
+        <h2>الأطباق</h2>
+        <button class="btn btn-primary" data-action="new-product" type="button">+ إضافة طبق جديد</button>
+      </div>
+      <div class="filters">
+        <input class="input" id="productSearch" type="search" placeholder="ابحث عن طبق...">
+        <select class="select" id="productCatFilter" aria-label="القسم"></select>
+      </div>
+      <div class="list" id="productList" aria-live="polite"></div>
+    </section>
+
+    <!-- Categories -->
+    <section id="tab-categories" hidden>
+      <div class="page-head">
+        <h2>الأقسام</h2>
+        <button class="btn btn-primary" data-action="new-category" type="button">+ إضافة قسم جديد</button>
+      </div>
+      <div class="list" id="categoryList" aria-live="polite"></div>
+    </section>
+  </main>
+</div>
+
+<!-- Product modal -->
+<div class="modal-backdrop" id="productModal" hidden>
+  <form class="modal" id="productForm" novalidate role="dialog" aria-modal="true" aria-labelledby="productModalTitle">
+    <h3 id="productModalTitle">إضافة طبق</h3>
+    <div class="field">
+      <label for="pCategory">القسم *</label>
+      <select class="select" id="pCategory" required></select>
+    </div>
+    <div class="row">
+      <div class="field">
+        <label for="pNameAr">اسم الطبق (عربي) *</label>
+        <input class="input" id="pNameAr" required maxlength="120">
+      </div>
+      <div class="field">
+        <label for="pNameEn">اسم الطبق (إنجليزي)</label>
+        <input class="input" id="pNameEn" maxlength="120" dir="ltr">
+      </div>
+    </div>
+    <div class="field">
+      <label for="pDescAr">الوصف (عربي)</label>
+      <textarea class="textarea" id="pDescAr" maxlength="500"></textarea>
+    </div>
+    <div class="field">
+      <label for="pDescEn">الوصف (إنجليزي)</label>
+      <textarea class="textarea" id="pDescEn" maxlength="500" dir="ltr"></textarea>
+    </div>
+    <div class="row">
+      <div class="field">
+        <label for="pPrice">السعر (ج.م) *</label>
+        <input class="input" id="pPrice" type="number" min="0" step="0.5" inputmode="decimal" required dir="ltr">
+      </div>
+      <div class="field">
+        <label for="pSort">ترتيب الظهور</label>
+        <input class="input" id="pSort" type="number" step="1" inputmode="numeric" value="0" dir="ltr">
+        <span class="hint">الأرقام الأصغر تظهر أولًا.</span>
+      </div>
+    </div>
+    <div class="field">
+      <label>صورة الطبق</label>
+      <div class="img-field">
+        <div class="img-preview" id="pImgPreview"></div>
+        <div class="img-actions">
+          <label class="btn btn-sm" for="pImage">اختيار صورة</label>
+          <input id="pImage" type="file" accept="image/jpeg,image/png,image/webp">
+          <button class="btn btn-sm btn-danger" id="pImgRemove" type="button" hidden>إزالة الصورة</button>
+          <span class="hint">JPG أو PNG أو WebP، حتى 3 ميجابايت.</span>
+        </div>
+      </div>
+    </div>
+    <div class="field">
+      <label class="switch">
+        <input type="checkbox" id="pAvailable" checked>
+        <span class="track"></span>
+        <span>ظاهر للزبائن</span>
+      </label>
+    </div>
+    <div class="form-error" id="productError" role="alert"></div>
+    <div class="modal-actions">
+      <button class="btn" type="button" data-close="productModal">إلغاء</button>
+      <button class="btn btn-primary" type="submit" id="productSaveBtn">حفظ</button>
+    </div>
+  </form>
+</div>
+
+<!-- Category modal -->
+<div class="modal-backdrop" id="categoryModal" hidden>
+  <form class="modal" id="categoryForm" novalidate role="dialog" aria-modal="true" aria-labelledby="categoryModalTitle">
+    <h3 id="categoryModalTitle">إضافة قسم</h3>
+    <div class="row">
+      <div class="field">
+        <label for="cNameAr">اسم القسم (عربي) *</label>
+        <input class="input" id="cNameAr" required maxlength="80">
+      </div>
+      <div class="field">
+        <label for="cNameEn">اسم القسم (إنجليزي)</label>
+        <input class="input" id="cNameEn" maxlength="80" dir="ltr">
+      </div>
+    </div>
+    <div class="field">
+      <label for="cSort">ترتيب الظهور</label>
+      <input class="input" id="cSort" type="number" step="1" inputmode="numeric" value="0" dir="ltr">
+      <span class="hint">الأرقام الأصغر تظهر أولًا.</span>
+    </div>
+    <div class="field">
+      <label class="switch">
+        <input type="checkbox" id="cActive" checked>
+        <span class="track"></span>
+        <span>ظاهر للزبائن</span>
+      </label>
+    </div>
+    <div class="form-error" id="categoryError" role="alert"></div>
+    <div class="modal-actions">
+      <button class="btn" type="button" data-close="categoryModal">إلغاء</button>
+      <button class="btn btn-primary" type="submit" id="categorySaveBtn">حفظ</button>
+    </div>
+  </form>
+</div>
+
+<!-- Confirm modal -->
+<div class="modal-backdrop" id="confirmModal" hidden>
+  <div class="modal" role="alertdialog" aria-modal="true" aria-labelledby="confirmTitle">
+    <h3 id="confirmTitle">تأكيد الحذف</h3>
+    <p id="confirmText"></p>
+    <div class="modal-actions">
+      <button class="btn" type="button" data-close="confirmModal">إلغاء</button>
+      <button class="btn btn-danger" type="button" id="confirmOk">نعم، احذف</button>
+    </div>
+  </div>
+</div>
+
+<div class="toasts" id="toasts" aria-live="polite"></div>
+
+<script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
+<script src="config.js"></script>
+<script src="admin.js"></script>
+</body>
+</html>
